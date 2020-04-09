@@ -47,7 +47,36 @@ function Init() {
                     [4, 9]
                 ],
                 matrix: new Matrix(4, 4)
+            },
+            {
+                type: 'cube',
+                center: Vector4(4, 4, -10, 1),
+                width: 8,
+                height: 8,
+                depth: 8
+            },
+            {
+                type: 'cone',
+                center: Vector4(4, 4, -10, 1),
+                radius: 3,
+                height: 4,
+                sides: 10
+            },
+            {
+                type: 'cylinder',
+                center: Vector4(4, 4, -10, 1);
+                radius: 3,
+                height: 4,
+                sides: 10,
+            },
+            {
+                type: 'sphere',
+                center: Vector4(4, 4, -10, 1);
+                radius: 3,
+                slices: 10,
+                stacks: 10,
             }
+            
         ]
     };
 
@@ -69,7 +98,9 @@ function Animate(timestamp) {
 
     var time = timestamp - start_time;
 
-    // ... step 2
+    // ... step 2 
+    // if a cone is rotated 360 degress per second, a tenth of a second ould give me 36 degress;
+    
 
     DrawScene();
 
@@ -103,6 +134,9 @@ function LoadNewScene() {
                                                           1);
                 }
             }
+            // else if for each model (cone, cylinder etc.), else if ( type == cone) and so on. 
+            // I think the else can be removed. 
+            
             else {
                 scene.models[i].center = Vector4(scene.models[i].center[0],
                                                  scene.models[i].center[1],
@@ -120,15 +154,19 @@ function OnKeyDown(event) {
     switch (event.keyCode) {
         case 37: // LEFT Arrow
             console.log("left");
+            // add prp srp value calculations to translate prp and srp movement along the u_axis.
             break;
         case 38: // UP Arrow
             console.log("up");
+            //  translate the PRP and SRP along the n-axis
             break;
         case 39: // RIGHT Arrow
             console.log("right");
+            // add prp srp value calculations to translate prp and srp movement along the u_axis.
             break;
         case 40: // DOWN Arrow
             console.log("down");
+            // translate the PRP and SRP along the n-axis
             break;
     }
 }
