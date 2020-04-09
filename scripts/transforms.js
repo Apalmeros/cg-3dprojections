@@ -2,28 +2,35 @@
 function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
     // 1. translate PRP to origin
         var translatePRP = new Matrix(4,4);
-        var final1 = Mat4x4Translate(translatePRP, -prp.x, -prp.y, -prp.z);
+        Mat4x4Translate(translatePRP, -prp.x, -prp.y, -prp.z);
+        
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
         var n_axis = new Vector(3);
         n_axis = prp.subtract(srp);
-        n_axis = n_axis.normalize();
+        n_axis.normalize();
         var u_axis = new Vector(3);
-        u_axis = Matrix.multiply([vup, n_axis]);
-        u_axis = u_axis.normalize();
+        u_axis = vup.cross(n_axis);
+        u_axis.normalize();
         var v_axis = new Vector(3);
-        v_axis = Matrix.multiply([n_axis, u_axis]);
+        v_axis = n_axis.cross(u_axis);
         
-        //var rotateVRC = new Matrix(4,4); // make 3 different matrices and multiply to get the final one?
-        //var final2 = Matrix
+        var rotateVRC = new Matrix(4,4);
+        rotateVRC.values = [[u_axis.x, u_axis.y, u_axis.z, 0],
+                            [v_axis.x, v_axis.y, v_axis.z, 0],
+                            [n_axis.x, n_axis.y, n_axis.z, 0],
+                            [0, 0, 0, 1]];
+                            
     // 3. shear such that CW is on the z-axis
         var cw = new Vector(3);
-        cw.values = [(clip[0] + clip[1])/2, (clip[2] + clip[3])/2];
+        cw.values = [(clip[0] + clip[1])/2, (clip[2] + clip[3])/2, -clip[4]];
         var dop = new Vector(3);
-        dop = cw.subtract(prp); // CW only has two points, prp has 3 how to calculate?
+        var orig = Vector3(0, 0, 0);
+        dop = cw.subtract(orig);
+        dop.normalize();
         var shX = (-dop.x / dop.z);
         var shY = (-dop.y / dop.z);
         var shearCW = new Matrix(4,4);
-        var final3 = Mat4x4ShearXY(shearCW, shX, shY);
+        Mat4x4ShearXY(shearCW, shX, shY);
         
     // 4. translate near clipping plane to origin
         var translateNear = new Matrix(4,4);
@@ -34,13 +41,13 @@ function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
         var sparY = 2 / (clip[3] - clip[2]);
         var sparZ = 1 / clip[5];
         var scaleVV = new Matrix(4,4);
-        var final5 = Mat4x4Scale(scaleVV, sparX, sparY, sparZ);
+        Mat4x4Scale(scaleVV, sparX, sparY, sparZ);
 
     // ...
     // var transform = Matrix.multiply([...]);
     // mat4x4.values = transform.values;
     //
-        var transform = Matrix.multiply([final1, final2, final3, final4, final5,]);
+        var transform = Matrix.multiply([scaleVV, translateNear, shearCW, rotateVRC, translatePRP]);
         mat4x4.values = transform.values;
 }
 
@@ -48,41 +55,47 @@ function Mat4x4Parallel(mat4x4, prp, srp, vup, clip) {
 function Mat4x4Projection(mat4x4, prp, srp, vup, clip) {
     // 1. translate PRP to origin
         var translatePRP = new Matrix(4,4);
-        var final1 = Mat4x4Translate(translatePRP, -prp.x, -prp.y, -prp.z);
+        Mat4x4Translate(translatePRP, -prp.x, -prp.y, -prp.z);
         
     // 2. rotate VRC such that (u,v,n) align with (x,y,z)
         var n_axis = new Vector(3);
         n_axis = prp.subtract(srp);
-        n_axis = n_axis.normalize();
+        n_axis.normalize();
         var u_axis = new Vector(3);
-        u_axis = Matrix.multiply([vup, n_axis]);
-        u_axis = u.axis.normalize();
+        u_axis = vup.cross(n_axis);
+        u.axis.normalize();
         var v_axis = new Vector(3);
-        v_axis = Matrix.multiply([n_axis, u_axis]);
+        v_axis = n_axis.cross(u_axis);
         
-        //var rotateVRC = new Matrix(4,4);
-        //var final2 = Matrix
+        var rotateVRC = new Matrix(4,4);
+        rotateVRC.values = [[u_axis.x, u_axis.y, u_axis.z, 0],
+                            [v_axis.x, v_axis.y, v_axis.z, 0],
+                            [n_axis.x, n_axis.y, n_axis.z, 0],
+                            [0, 0, 0, 1]];
+                            
     // 3. shear such that CW is on the z-axis
         var cw = new Vector(3);
         cw.values = [(clip[0] + clip[1])/2, (clip[2] + clip[3])/2];
         var dop = new Vector(3);
-        dop = cw.subtract(prp);
+        var orig = Vector3(0, 0, 0);
+        dop = cw.subtract(orig);
+        dop.normalize();
         var shX = (-dop.x / dop.z);
         var shY = (-dop.y / dop.z);
         var shearCW = new Matrix(4,4);
-        var final3 = Mat4x4ShearXY(shearCW, shX, shY);
+        Mat4x4ShearXY(shearCW, shX, shY);
         
     // 4. scale such that view volume bounds are ([z,-z], [z,-z], [-1,zmin])
         var sperX = (2 * clip[4]) / ((clip[1] - clip[0]) * clip[5]);
         var sperY = (2 * clip[4]) / ((clip[3] - clip[2]) * clip[5]);
         var sperZ = 1 / clip[5];
         var scaleVV = new Matrix(4,4);
-        var final4 = Mat4x4Scale(scaleVV, sparX, sparY, sparZ);
+        Mat4x4Scale(scaleVV, sparX, sparY, sparZ);
 
     // ...
     // var transform = Matrix.multiply([...]);
     // mat4x4.values = transform.values;
-        var transform = Matrix.mulitply([final1, final2, final3, final4]);
+        var transform = Matrix.mulitply([scaleVV, shearCW, rotateVRC, translatePRP]);
         mat4x4.values = transform.values;
 }
 
